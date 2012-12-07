@@ -88,12 +88,11 @@ module ThumbsUp
       # The lower bound of a Wilson Score with a default confidence interval of 95%. Gives a more accurate representation of average rating (plusminus) based on the number of positive ratings and total ratings.
       # http://evanmiller.org/how-not-to-sort-by-average-rating.html
       def ci_plusminus(confidence = 0.95)
-        require 'statistics2/no_ext'
         n = votes.size
         if n == 0
           return 0
         end
-        z = Statistics2.pnormaldist(1 - (1 - confidence) / 2)
+        z = pnormaldist(1 - (1 - confidence) / 2)
         phat = 1.0 * votes_for / n
         (phat + z * z / (2 * n) - z * Math.sqrt((phat * (1 - phat) + z * z / (4 * n)) / n)) / (1 + z * z / n)
       end
@@ -113,7 +112,31 @@ module ThumbsUp
               :voter_id => voter.id
             ).count
       end
+      
+      # extracted from Statistics2, to avoid a gem with native extensions and allow use in JRuby
+      def pnormaldist(qn)
+        b = [1.570796288, 0.03706987906, -0.8364353589e-3,
+             -0.2250947176e-3, 0.6841218299e-5, 0.5824238515e-5,
+             -0.104527497e-5, 0.8360937017e-7, -0.3231081277e-8,
+             0.3657763036e-10, 0.6936233982e-12]
 
+        if(qn < 0.0 || 1.0 < qn)
+          $stderr.printf("Error : qn <= 0 or qn >= 1  in pnorm()!\n")
+          return 0.0;
+        end
+        qn == 0.5 and return 0.0
+
+        w1 = qn
+        qn > 0.5 and w1 = 1.0 - w1
+        w3 = -Math.log(4.0 * w1 * (1.0 - w1))
+        w1 = b[0]
+        1.upto 10 do |i|
+          w1 += b[i] * w3**i;
+        end
+        qn > 0.5 and return Math.sqrt(w1 * w3)
+        -Math.sqrt(w1 * w3)
+      end
+      
     end
   end
 end
