@@ -88,7 +88,7 @@ module ThumbsUp
       # The lower bound of a Wilson Score with a default confidence interval of 95%. Gives a more accurate representation of average rating (plusminus) based on the number of positive ratings and total ratings.
       # http://evanmiller.org/how-not-to-sort-by-average-rating.html
       def ci_plusminus(confidence = 0.95)
-        require 'statistics2'
+        require 'statistics2/no_ext'
         n = votes.size
         if n == 0
           return 0
